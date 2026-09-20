@@ -1,0 +1,45 @@
+name: Build Android APKs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build CustomerApp
+        run: |
+          cd CustomerApp
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Build AdminApp
+        run: |
+          cd AdminApp
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload Customer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomerApp-APK
+          path: CustomerApp/**/build/outputs/apk/**/*.apk
+
+      - name: Upload Admin APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AdminApp-APK
+          path: AdminApp/**/build/outputs/apk/**/*.apk
