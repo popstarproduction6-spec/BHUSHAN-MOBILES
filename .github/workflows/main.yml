@@ -25,13 +25,50 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Find project folder
+      - name: Find or Extract Project
+        shell: bash
         run: |
-          if [ -d "bhushan_two_apps" ]; then
-            echo "PROJECT_ROOT=bhushan_two_apps" >> "$GITHUB_ENV"
-          else
+          set -e
+
+          echo "Checking project structure..."
+
+          # Case 1: Projects are directly in repository root
+          if [ -d "CustomerApp" ] && [ -d "AdminApp" ]; then
+            echo "Found CustomerApp and AdminApp in repository root."
             echo "PROJECT_ROOT=." >> "$GITHUB_ENV"
+
+          # Case 2: Projects are inside bhushan_two_apps
+          elif [ -d "bhushan_two_apps/CustomerApp" ] && [ -d "bhushan_two_apps/AdminApp" ]; then
+            echo "Found projects inside bhushan_two_apps."
+            echo "PROJECT_ROOT=bhushan_two_apps" >> "$GITHUB_ENV"
+
+          # Case 3: ZIP file is in repository
+          elif [ -f "BhushanMobiles_Two_Panel_Apps.zip" ]; then
+            echo "Found ZIP file. Extracting..."
+            unzip -q "BhushanMobiles_Two_Panel_Apps.zip"
+
+            if [ -d "bhushan_two_apps/CustomerApp" ] && [ -d "bhushan_two_apps/AdminApp" ]; then
+              echo "ZIP extracted successfully."
+              echo "PROJECT_ROOT=bhushan_two_apps" >> "$GITHUB_ENV"
+            else
+              echo "ERROR: CustomerApp/AdminApp not found after extracting ZIP."
+              find . -maxdepth 4 -type d | sort
+              exit 1
+            fi
+
+          else
+            echo "ERROR: Could not find CustomerApp and AdminApp."
+            echo "Repository contents:"
+            find . -maxdepth 4 -type d | sort
+            exit 1
           fi
+
+      - name: Show Project Structure
+        run: |
+          echo "PROJECT_ROOT=$PROJECT_ROOT"
+          ls -la "$PROJECT_ROOT"
+          ls -la "$PROJECT_ROOT/CustomerApp"
+          ls -la "$PROJECT_ROOT/AdminApp"
 
       - name: Build Customer APK
         run: |
