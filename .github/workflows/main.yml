@@ -20,26 +20,39 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Build CustomerApp
-        run: |
-          cd CustomerApp
-          chmod +x gradlew
-          ./gradlew assembleDebug
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
-      - name: Build AdminApp
+      - name: Find project folder
         run: |
-          cd AdminApp
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          if [ -d "bhushan_two_apps" ]; then
+            echo "PROJECT_ROOT=bhushan_two_apps" >> "$GITHUB_ENV"
+          else
+            echo "PROJECT_ROOT=." >> "$GITHUB_ENV"
+          fi
+
+      - name: Build Customer APK
+        run: |
+          cd "$PROJECT_ROOT/CustomerApp"
+          gradle assembleDebug
+
+      - name: Build Admin APK
+        run: |
+          cd "$PROJECT_ROOT/AdminApp"
+          gradle assembleDebug
 
       - name: Upload Customer APK
         uses: actions/upload-artifact@v4
         with:
           name: CustomerApp-APK
-          path: CustomerApp/**/build/outputs/apk/**/*.apk
+          path: |
+            ${{ env.PROJECT_ROOT }}/CustomerApp/app/build/outputs/apk/debug/*.apk
 
       - name: Upload Admin APK
         uses: actions/upload-artifact@v4
         with:
           name: AdminApp-APK
-          path: AdminApp/**/build/outputs/apk/**/*.apk
+          path: |
+            ${{ env.PROJECT_ROOT }}/AdminApp/app/build/outputs/apk/debug/*.apk
